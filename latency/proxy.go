@@ -46,9 +46,13 @@ func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if config.GetLatency() != nil {
-		time.Sleep(*config.GetLatency())
+		latency := *config.GetLatency()
+		time.Sleep(latency)
+
+		w.Header().Add("X-LATENCY-ADDED-LATENCY", latency.String())
 	}
 
+	w.WriteHeader(res.StatusCode)
 	w.Write(byt)
 }
 
