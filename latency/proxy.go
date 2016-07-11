@@ -49,11 +49,18 @@ func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		latency := *config.GetLatency()
 		time.Sleep(latency)
 
-		w.Header().Add("X-LATENCY-ADDED-LATENCY", latency.String())
+		if getHeaderInfoEnabled() {
+			w.Header().Add("X-LATENCY-ADDED-LATENCY", latency.String())
+		}
+
 	}
 
 	w.WriteHeader(res.StatusCode)
 	w.Write(byt)
+}
+
+func getHeaderInfoEnabled() bool {
+	return ConfigEnvironment() == "development"
 }
 
 // FixedLatencyConfig introduces the same latency for each request

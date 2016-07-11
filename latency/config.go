@@ -12,6 +12,13 @@ func ConfigProxyURL() string {
 	return url
 }
 
+// ConfigEnvironment returns the current environment
+func ConfigEnvironment() string {
+	env := os.Getenv("ENVIRONMENT")
+
+	return env
+}
+
 func validateConfigProxyURL(url string) {
 	if url == "" {
 		panic("Missing envvar LATENCY_PROXY_URL")
