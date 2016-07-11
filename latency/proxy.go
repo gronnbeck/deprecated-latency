@@ -3,16 +3,18 @@ package latency
 import (
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 // HTTPHandler introduces latency to a http handler
 type HTTPHandler struct {
 	proxyURL string
+	latency  *time.Duration
 }
 
 // NewHTTPHandler creates and returns a new HTTPHandler
-func NewHTTPHandler(url string) HTTPHandler {
-	return HTTPHandler{proxyURL: url}
+func NewHTTPHandler(url string, latency *time.Duration) HTTPHandler {
+	return HTTPHandler{proxyURL: url, latency: latency}
 }
 
 func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -35,6 +37,10 @@ func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	if err != nil {
 		panic(err)
+	}
+
+	if h.latency != nil {
+		time.Sleep(*h.latency)
 	}
 
 	w.Write(byt)
