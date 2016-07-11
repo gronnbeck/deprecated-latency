@@ -9,15 +9,21 @@ import (
 // HTTPHandler introduces latency to a http handler
 type HTTPHandler struct {
 	proxyURL string
-	latency  *time.Duration
+	config   HTTPHandlerConfig
+}
+
+// HTTPHandlerConfig describes how a HTTPHandler should behave
+type HTTPHandlerConfig interface {
+	GetLatency() *time.Duration
 }
 
 // NewHTTPHandler creates and returns a new HTTPHandler
-func NewHTTPHandler(url string, latency *time.Duration) HTTPHandler {
-	return HTTPHandler{proxyURL: url, latency: latency}
+func NewHTTPHandler(url string, config HTTPHandlerConfig) HTTPHandler {
+	return HTTPHandler{proxyURL: url, config: config}
 }
 
 func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	config := h.config
 
 	req2, err := http.NewRequest(req.Method, h.proxyURL, req.Body)
 	req2.Header = req.Header
@@ -39,9 +45,24 @@ func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		panic(err)
 	}
 
-	if h.latency != nil {
-		time.Sleep(*h.latency)
+	if config.GetLatency() != nil {
+		time.Sleep(*config.GetLatency())
 	}
 
 	w.Write(byt)
+}
+
+// FixedLatencyConfig introduces the same latency for each request
+type FixedLatencyConfig struct {
+	latency time.Duration
+}
+
+// NewFixedLatencyConfig returns a fresh FixedLatencyConfig
+func NewFixedLatencyConfig(latency time.Duration) FixedLatencyConfig {
+	return FixedLatencyConfig{latency}
+}
+
+// GetLatency returns the same latency defined in its construction
+func (c FixedLatencyConfig) GetLatency() *time.Duration {
+	return &c.latency
 }

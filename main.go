@@ -11,8 +11,8 @@ func main() {
 
 	proxyURL := latency.ConfigProxyURL()
 
-	delay := 3 * time.Second
-	latencyHandler := latency.NewHTTPHandler(proxyURL, &delay)
+	config := latency.NewFixedLatencyConfig(3 * time.Second)
+	latencyHandler := latency.NewHTTPHandler(proxyURL, config)
 
 	http.Handle("/", latencyHandler)
 
