@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gronnbeck/latency/latency"
 )
@@ -11,7 +10,7 @@ func main() {
 
 	proxyURL := latency.ConfigProxyURL()
 
-	config := latency.NewFixedLatencyConfig(3 * time.Second)
+	config := latency.NewProbabilisticLatencyConfig(0, 3)
 	latencyHandler := latency.NewHTTPHandler(proxyURL, config)
 
 	http.Handle("/", latencyHandler)
