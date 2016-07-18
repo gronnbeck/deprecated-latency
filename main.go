@@ -2,14 +2,13 @@ package main
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gronnbeck/latency/latency"
 )
 
 func main() {
 
-	latency.NewEtcdHTTPHandlerConfig("/test2", 0*time.Second, 2*time.Second)
+	//latency.NewEtcdHTTPHandlerConfig("/test2", 0*time.Second, 2*time.Second)
 
 	proxyURL := latency.ConfigProxyURL()
 
