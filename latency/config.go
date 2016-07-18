@@ -4,6 +4,10 @@ import "os"
 
 func init() {
 	validateConfigProxyURL(os.Getenv("LATENCY_PROXY_URL"))
+
+	if ConfigEtcdURL() == "" {
+		panic("Missing envvar ETCD_URL")
+	}
 }
 
 // ConfigProxyURL returns the URL latency is proxying to. Panics if
@@ -18,6 +22,11 @@ func ConfigEnvironment() string {
 	env := os.Getenv("ENVIRONMENT")
 
 	return env
+}
+
+// ConfigEtcdURL returns the URL of the etcd to use
+func ConfigEtcdURL() string {
+	return os.Getenv("ETCD_URL")
 }
 
 func validateConfigProxyURL(url string) {
