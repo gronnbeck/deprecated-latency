@@ -2,13 +2,14 @@ package latency
 
 import "os"
 
+func init() {
+	validateConfigProxyURL(os.Getenv("LATENCY_PROXY_URL"))
+}
+
 // ConfigProxyURL returns the URL latency is proxying to. Panics if
 // envvar LATENCY_PROXY_URL is not set
 func ConfigProxyURL() string {
 	url := os.Getenv("LATENCY_PROXY_URL")
-
-	validateConfigProxyURL(url)
-
 	return url
 }
 
