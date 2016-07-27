@@ -2,7 +2,6 @@ package latency
 
 import (
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"time"
 )
@@ -13,11 +12,6 @@ type HTTPHandler struct {
 	config   HTTPHandlerConfig
 }
 
-// HTTPHandlerConfig describes how a HTTPHandler should behave
-type HTTPHandlerConfig interface {
-	GetLatency() *time.Duration
-}
-
 // NewHTTPHandler creates and returns a new HTTPHandler
 func NewHTTPHandler(url string, config HTTPHandlerConfig) HTTPHandler {
 	return HTTPHandler{proxyURL: url, config: config}
@@ -26,12 +20,7 @@ func NewHTTPHandler(url string, config HTTPHandlerConfig) HTTPHandler {
 func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	config := h.config
 
-	req2, err := http.NewRequest(req.Method, h.proxyURL, req.Body)
-	req2.Header = req.Header
-
-	if err != nil {
-		panic(err)
-	}
+	req2 := h.copyRequest(req)
 
 	res, err := http.DefaultClient.Do(req2)
 
@@ -60,40 +49,17 @@ func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Write(byt)
 }
 
+func (h HTTPHandler) copyRequest(req *http.Request) *http.Request {
+	copy, err := http.NewRequest(req.Method, h.proxyURL, req.Body)
+	copy.Header = req.Header
+
+	if err != nil {
+		panic(err)
+	}
+
+	return copy
+}
+
 func getHeaderInfoEnabled() bool {
 	return ConfigEnvironment() == "development"
-}
-
-// FixedLatencyConfig introduces the same latency for each request
-type FixedLatencyConfig struct {
-	latency time.Duration
-}
-
-// NewFixedLatencyConfig returns a fresh FixedLatencyConfig
-func NewFixedLatencyConfig(latency time.Duration) FixedLatencyConfig {
-	return FixedLatencyConfig{latency}
-}
-
-// GetLatency returns the same latency defined in its construction
-func (c FixedLatencyConfig) GetLatency() *time.Duration {
-	return &c.latency
-}
-
-// ProbabilisticLatencyConfig controls latency using a probabilistic model
-type ProbabilisticLatencyConfig struct {
-	minLatency int
-	maxLatency int
-}
-
-// NewProbabilisticLatencyConfig returns a freshly created ProbabilisticLatencyConfig
-func NewProbabilisticLatencyConfig(minLatency, maxLatency int) ProbabilisticLatencyConfig {
-	return ProbabilisticLatencyConfig{minLatency, maxLatency}
-}
-
-// GetLatency returns the latency based on configuration of the
-// ProbabilisticLatencyConfig
-func (c ProbabilisticLatencyConfig) GetLatency() *time.Duration {
-	value := c.minLatency + rand.Intn(c.maxLatency-c.minLatency)
-	latency := time.Duration(value) * time.Second
-	return &latency
 }
