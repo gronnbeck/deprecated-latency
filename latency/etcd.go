@@ -6,10 +6,10 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/coreos/etcd/client"
+	etcd "github.com/gronnbeck/latency/latency/etcd"
 	"golang.org/x/net/context"
 )
 
@@ -20,9 +20,7 @@ type EtcdHTTPHandlerConfig struct {
 	key    string
 	keyAPI client.KeysAPI
 
-	mu  *sync.RWMutex
-	min time.Duration
-	max time.Duration
+	etcdHandler *etcd.Handler
 }
 
 // NewEtcdHTTPHandlerConfig returns a new EtcdHTTPHandlerConfig which is a type of HTTPHandlerConfig
@@ -40,11 +38,9 @@ func NewEtcdHTTPHandlerConfig(key string, min, max time.Duration) EtcdHTTPHandle
 	keyAPI := client.NewKeysAPI(c)
 
 	handler := EtcdHTTPHandlerConfig{
-		key:    key,
-		keyAPI: keyAPI,
-		mu:     new(sync.RWMutex),
-		min:    min,
-		max:    max,
+		key:         key,
+		keyAPI:      keyAPI,
+		etcdHandler: etcd.NewHandler(min, max),
 	}
 
 	handler.setup()
@@ -64,34 +60,10 @@ func NewEtcdHTTPHandlerConfig(key string, min, max time.Duration) EtcdHTTPHandle
 
 // GetLatency returns a number between min/max using exponential distribution
 func (e EtcdHTTPHandlerConfig) GetLatency() *time.Duration {
-	min := math.Max(e.getMin().Seconds(), rand.ExpFloat64())
-	actual := math.Min(min, e.getMax().Seconds())
+	min := math.Max(e.etcdHandler.GetMin().Seconds(), rand.ExpFloat64())
+	actual := math.Min(min, e.etcdHandler.GetMax().Seconds())
 	dur := time.Duration(actual) * time.Second
 	return &dur
-}
-
-func (e EtcdHTTPHandlerConfig) getMin() time.Duration {
-	e.mu.RLock()
-	defer e.mu.RUnlock()
-	return e.min
-}
-
-func (e *EtcdHTTPHandlerConfig) setMin(min time.Duration) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	e.min = min
-}
-
-func (e EtcdHTTPHandlerConfig) getMax() time.Duration {
-	e.mu.RLock()
-	defer e.mu.RUnlock()
-	return e.max
-}
-
-func (e *EtcdHTTPHandlerConfig) setMax(max time.Duration) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	e.max = max
 }
 
 func (e EtcdHTTPHandlerConfig) setup() {
@@ -115,13 +87,13 @@ func (e EtcdHTTPHandlerConfig) selfUpdate(n client.Node) {
 		if err != nil {
 			panic(err)
 		}
-		e.setMax(millis2Nano(val))
+		e.etcdHandler.SetMax(millis2Nano(val))
 	case "min":
 		val, err := strconv.ParseInt(n.Value, 10, 64)
 		if err != nil {
 			panic(err)
 		}
-		e.setMin(millis2Nano(val))
+		e.etcdHandler.SetMin(millis2Nano(val))
 	}
 	fmt.Println(n.Key, n.Value)
 }
@@ -133,14 +105,14 @@ func parseKey(key string) string {
 
 func (e EtcdHTTPHandlerConfig) register() {
 	_, err := e.keyAPI.Create(context.Background(),
-		fmt.Sprintf("%v/min", e.key), strconv.FormatInt(millis(e.min), 10))
+		fmt.Sprintf("%v/min", e.key), strconv.FormatInt(millis(e.etcdHandler.GetMin()), 10))
 
 	if err != nil {
 		panic(err)
 	}
 
 	_, err = e.keyAPI.Create(context.Background(),
-		fmt.Sprintf("%v/max", e.key), strconv.FormatInt(millis(e.max), 10))
+		fmt.Sprintf("%v/max", e.key), strconv.FormatInt(millis(e.etcdHandler.GetMax()), 10))
 
 	if err != nil {
 		panic(err)
