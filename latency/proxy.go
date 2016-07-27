@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/gronnbeck/latency/config"
 )
 
 // Proxy introduces latency to a http handler
@@ -68,5 +70,5 @@ func (h Proxy) copyRequest(req *http.Request) *http.Request {
 }
 
 func getHeaderInfoEnabled() bool {
-	return ConfigEnvironment() == "development"
+	return config.Environment() == "development"
 }

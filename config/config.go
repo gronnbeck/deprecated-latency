@@ -1,31 +1,31 @@
-package latency
+package config
 
 import "os"
 
 func init() {
 	validateConfigProxyURL(os.Getenv("LATENCY_PROXY_URL"))
 
-	if ConfigEtcdURL() == "" {
+	if EtcdURL() == "" {
 		panic("Missing envvar ETCD_URL")
 	}
 }
 
-// ConfigProxyURL returns the URL latency is proxying to. Panics if
+// ProxyURL returns the URL latency is proxying to. Panics if
 // envvar LATENCY_PROXY_URL is not set
-func ConfigProxyURL() string {
+func ProxyURL() string {
 	url := os.Getenv("LATENCY_PROXY_URL")
 	return url
 }
 
-// ConfigEnvironment returns the current environment
-func ConfigEnvironment() string {
+// Environment returns the current environment
+func Environment() string {
 	env := os.Getenv("ENVIRONMENT")
 
 	return env
 }
 
-// ConfigEtcdURL returns the URL of the etcd to use
-func ConfigEtcdURL() string {
+// EtcdURL returns the URL of the etcd to use
+func EtcdURL() string {
 	return os.Getenv("ETCD_URL")
 }
 

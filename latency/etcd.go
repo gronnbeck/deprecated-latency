@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/client"
+	"github.com/gronnbeck/latency/config"
 	"golang.org/x/net/context"
 )
 
@@ -25,7 +26,7 @@ type EtcdHTTPHandlerConfig struct {
 // NewEtcdHTTPHandlerConfig returns a new EtcdHTTPHandlerConfig which is a type of HTTPHandlerConfig
 func NewEtcdHTTPHandlerConfig(key string, min, max time.Duration) EtcdHTTPHandlerConfig {
 	cfg := client.Config{
-		Endpoints: []string{ConfigEtcdURL()},
+		Endpoints: []string{config.EtcdURL()},
 		Transport: client.DefaultTransport,
 	}
 
