@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/client"
-	etcd "github.com/gronnbeck/latency/latency/etcd"
 	"golang.org/x/net/context"
 )
 
@@ -20,7 +19,7 @@ type EtcdHTTPHandlerConfig struct {
 	key    string
 	keyAPI client.KeysAPI
 
-	etcdHandler *etcd.Handler
+	store *Store
 }
 
 // NewEtcdHTTPHandlerConfig returns a new EtcdHTTPHandlerConfig which is a type of HTTPHandlerConfig
@@ -38,9 +37,9 @@ func NewEtcdHTTPHandlerConfig(key string, min, max time.Duration) EtcdHTTPHandle
 	keyAPI := client.NewKeysAPI(c)
 
 	handler := EtcdHTTPHandlerConfig{
-		key:         key,
-		keyAPI:      keyAPI,
-		etcdHandler: etcd.NewHandler(min, max),
+		key:    key,
+		keyAPI: keyAPI,
+		store:  NewStore(min, max),
 	}
 
 	handler.setup()
@@ -60,8 +59,8 @@ func NewEtcdHTTPHandlerConfig(key string, min, max time.Duration) EtcdHTTPHandle
 
 // GetLatency returns a number between min/max using exponential distribution
 func (e EtcdHTTPHandlerConfig) GetLatency() *time.Duration {
-	min := math.Max(e.etcdHandler.GetMin().Seconds(), rand.ExpFloat64())
-	actual := math.Min(min, e.etcdHandler.GetMax().Seconds())
+	min := math.Max(e.store.GetMin().Seconds(), rand.ExpFloat64())
+	actual := math.Min(min, e.store.GetMax().Seconds())
 	dur := time.Duration(actual) * time.Second
 	return &dur
 }
@@ -87,13 +86,13 @@ func (e EtcdHTTPHandlerConfig) selfUpdate(n client.Node) {
 		if err != nil {
 			panic(err)
 		}
-		e.etcdHandler.SetMax(millis2Nano(val))
+		e.store.SetMax(millis2Nano(val))
 	case "min":
 		val, err := strconv.ParseInt(n.Value, 10, 64)
 		if err != nil {
 			panic(err)
 		}
-		e.etcdHandler.SetMin(millis2Nano(val))
+		e.store.SetMin(millis2Nano(val))
 	}
 	fmt.Println(n.Key, n.Value)
 }
@@ -105,14 +104,14 @@ func parseKey(key string) string {
 
 func (e EtcdHTTPHandlerConfig) register() {
 	_, err := e.keyAPI.Create(context.Background(),
-		fmt.Sprintf("%v/min", e.key), strconv.FormatInt(millis(e.etcdHandler.GetMin()), 10))
+		fmt.Sprintf("%v/min", e.key), strconv.FormatInt(millis(e.store.GetMin()), 10))
 
 	if err != nil {
 		panic(err)
 	}
 
 	_, err = e.keyAPI.Create(context.Background(),
-		fmt.Sprintf("%v/max", e.key), strconv.FormatInt(millis(e.etcdHandler.GetMax()), 10))
+		fmt.Sprintf("%v/max", e.key), strconv.FormatInt(millis(e.store.GetMax()), 10))
 
 	if err != nil {
 		panic(err)
