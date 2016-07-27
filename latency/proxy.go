@@ -6,18 +6,25 @@ import (
 	"time"
 )
 
-// HTTPHandler introduces latency to a http handler
-type HTTPHandler struct {
+// Proxy introduces latency to a http handler
+type Proxy struct {
 	proxyURL string
 	config   HTTPHandlerConfig
 }
 
-// NewHTTPHandler creates and returns a new HTTPHandler
-func NewHTTPHandler(url string, config HTTPHandlerConfig) HTTPHandler {
-	return HTTPHandler{proxyURL: url, config: config}
+// NewProxy creates and returns a new Proxy
+func NewProxy(url string, config HTTPHandlerConfig) Proxy {
+	return Proxy{proxyURL: url, config: config}
 }
 
-func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+// Listen is a shorthand method for setting up a Proxy.
+// Alternatively you can use Proxy and set it up manually using http.Handle
+func (h Proxy) Listen(uri string) {
+	http.Handle("/", h)
+	http.ListenAndServe(uri, nil)
+}
+
+func (h Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	config := h.config
 
 	req2 := h.copyRequest(req)
@@ -49,7 +56,7 @@ func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Write(byt)
 }
 
-func (h HTTPHandler) copyRequest(req *http.Request) *http.Request {
+func (h Proxy) copyRequest(req *http.Request) *http.Request {
 	copy, err := http.NewRequest(req.Method, h.proxyURL, req.Body)
 	copy.Header = req.Header
 

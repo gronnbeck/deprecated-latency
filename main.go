@@ -1,10 +1,6 @@
 package main
 
-import (
-	"net/http"
-
-	"github.com/gronnbeck/latency/latency"
-)
+import "github.com/gronnbeck/latency/latency"
 
 func main() {
 
@@ -13,10 +9,8 @@ func main() {
 	proxyURL := latency.ConfigProxyURL()
 
 	config := latency.NewProbabilisticLatencyConfig(0, 3)
-	latencyHandler := latency.NewHTTPHandler(proxyURL, config)
+	proxy := latency.NewProxy(proxyURL, config)
 
-	http.Handle("/", latencyHandler)
-
-	http.ListenAndServe(":8000", nil)
+	proxy.Listen(":8000")
 
 }
