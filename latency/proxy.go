@@ -9,11 +9,11 @@ import (
 // Proxy introduces latency to a http handler
 type Proxy struct {
 	proxyURL string
-	config   HTTPHandlerConfig
+	config   ProxyConfig
 }
 
 // NewProxy creates and returns a new Proxy
-func NewProxy(url string, config HTTPHandlerConfig) Proxy {
+func NewProxy(url string, config ProxyConfig) Proxy {
 	return Proxy{proxyURL: url, config: config}
 }
 
